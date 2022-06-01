@@ -17,7 +17,7 @@ public class ChannelDemo {
         // 2. RandomAccessFile
 //        try (FileChannel channel = new FileInputStream("data.txt").getChannel()) {
 //        try (FileChannel channel = new RandomAccessFile("data.txt", "rw").getChannel()) {
-        try (FileChannel channel = new FileInputStream(new File(ChannelDemo2.class.getResource("/resource_data.txt").getPath())).getChannel()) {
+        try (FileChannel channel = new FileInputStream(new File(ChannelDemo.class.getResource("/resource_data.txt").getPath())).getChannel()) {
             ByteBuffer buffer = ByteBuffer.allocate(10);
             while (true) {
                 // 从channel读取数据， 向buffer写入
