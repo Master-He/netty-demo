@@ -1,11 +1,10 @@
-package org.github.hwj.chapter01;
+package org.github.hwj.chapter01.demo01;
 
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
@@ -33,9 +32,9 @@ public class ChannelDemo {
                     log.info("byte: " + b + "  char: " + (char) b);
                 }
 
+                buffer.clear(); // 切换为写模式
 //                buffer.compact(); // 切换为写模式
-//                buffer.clear(); // 切换为写模式
-                buffer.flip();  // 也切换为写模式
+//                buffer.flip();  // 也可以切换为写模式
             }
 
         } catch (IOException ignore) {
