@@ -1,5 +1,4 @@
-package org.github.hwj.chapter01;
-
+package org.github.nio.c2;
 
 import io.netty.util.internal.StringUtil;
 
@@ -95,6 +94,12 @@ public class ByteBufferUtil {
         System.out.println("+--------+-------------------- read -----------------------+----------------+");
         System.out.printf("position: [%d], limit: [%d]\n", buffer.position(), buffer.limit());
         System.out.println(builder);
+    }
+
+    public static void main(String[] args) {
+        ByteBuffer buffer = ByteBuffer.allocate(10);
+        buffer.put(new byte[]{97, 98, 99, 100});
+        debugAll(buffer);
     }
 
     private static void appendPrettyHexDump(StringBuilder dump, ByteBuffer buf, int offset, int length) {
