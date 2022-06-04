@@ -2,6 +2,7 @@ package org.github.nio.c2;
 
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import static org.github.nio.c2.ByteBufferUtil.debugAll;
@@ -16,6 +17,7 @@ public class TestByteBufferString {
 
         // 2. Charset
         ByteBuffer buffer2 = StandardCharsets.UTF_8.encode("hello");
+//        ByteBuffer buffer2 = Charset.defaultCharset().encode("hello");
         debugAll(buffer2);
 
         // 3. wrap
