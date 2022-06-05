@@ -82,13 +82,21 @@ public class MultiThreadServer {
                     while (iter.hasNext()) {
                         SelectionKey key = iter.next();
                         iter.remove();
-                        if (key.isReadable()) {
-                            ByteBuffer buffer = ByteBuffer.allocate(16);
-                            SocketChannel channel = (SocketChannel) key.channel();
-                            log.debug("read...{}", channel.getRemoteAddress());
-                            channel.read(buffer);
-                            buffer.flip();
-                            debugAll(buffer);
+                        try {
+                            if (key.isReadable()) {
+                                ByteBuffer buffer = ByteBuffer.allocate(16);
+                                SocketChannel channel = (SocketChannel) key.channel();
+                                log.debug("read...{}", channel.getRemoteAddress());
+                                int read = channel.read(buffer);
+                                if (read == -1) {
+                                    key.cancel();  // sc正常关闭时，也会有一个读事件
+                                } else {
+                                    buffer.flip();
+                                    debugAll(buffer);
+                                }
+                            }
+                        } catch (IOException e) {
+                            key.cancel();  // sc异常关闭时，也会有一个读事件
                         }
                     }
                 } catch (IOException e) {
