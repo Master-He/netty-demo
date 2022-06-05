@@ -1,5 +1,6 @@
 package org.github.nio.c5;
 
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -13,31 +14,28 @@ import static org.github.nio.c2.ByteBufferUtil.debugAll;
 
 
 @Slf4j
-public class AioFileChannel {
+public class AioFileChannel2 {
     public static void main(String[] args) throws IOException {
         try (AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get("data.txt"), StandardOpenOption.READ)) {
-            // 参数1 ByteBuffer
-            // 参数2 读取的起始位置
-            // 参数3 附件
-            // 参数4 回调对象 CompletionHandler
             ByteBuffer buffer = ByteBuffer.allocate(16);
-            log.debug("read begin...");
+            log.info("read begin...");
             channel.read(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
-                @Override // read 成功
-                public void completed(Integer result, ByteBuffer attachment) {
-                    log.debug("read completed...{}", result);
-                    attachment.flip();
-                    debugAll(attachment);
+                @Override
+                public void completed(Integer length, ByteBuffer buffer) {
+                    log.debug("read completed...{}", length);
+                    buffer.flip();
+                    debugAll(buffer);
                 }
-                @Override // read 失败
+
+                @Override
                 public void failed(Throwable exc, ByteBuffer attachment) {
                     exc.printStackTrace();
                 }
             });
-            log.debug("read end...");
+            log.info("read end...");
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.in.read();  // 这行代码是为了阻塞主线程， 等待CompletionHandler守护线程有机会执行
+        System.in.read();
     }
 }

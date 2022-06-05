@@ -14,22 +14,24 @@ import static org.github.nio.c2.ByteBufferUtil.debugAll;
 
 
 @Slf4j
-public class MultiThreadServer {
+public class MultiThreadServer2 {
     public static void main(String[] args) throws IOException {
         Thread.currentThread().setName("boss");
+        Selector boss = Selector.open();
+
         ServerSocketChannel ssc = ServerSocketChannel.open();
         ssc.configureBlocking(false);
-        Selector boss = Selector.open();
-        SelectionKey bossKey = ssc.register(boss, 0, null);
-        bossKey.interestOps(SelectionKey.OP_ACCEPT);
         ssc.bind(new InetSocketAddress(8080));
-        // 1. 创建固定数量的 worker 并初始化
+        SelectionKey boosKey = ssc.register(boss, 0, null);
+        boosKey.interestOps(SelectionKey.OP_ACCEPT);
+
         Worker[] workers = new Worker[Runtime.getRuntime().availableProcessors()];
         for (int i = 0; i < workers.length; i++) {
             workers[i] = new Worker("worker-" + i);
         }
+
         AtomicInteger index = new AtomicInteger();
-        while(true) {
+        while (true) {
             boss.select();
             Iterator<SelectionKey> iter = boss.selectedKeys().iterator();
             while (iter.hasNext()) {
@@ -38,63 +40,45 @@ public class MultiThreadServer {
                 if (key.isAcceptable()) {
                     SocketChannel sc = ssc.accept();
                     sc.configureBlocking(false);
-                    log.debug("connected...{}", sc.getRemoteAddress());
-                    // 2. 关联 selector
-                    log.debug("before register...{}", sc.getRemoteAddress());
-                    // round robin 轮询
-                    workers[index.getAndIncrement() % workers.length].register(sc); // boss 调用 初始化 selector , 启动 worker-0
-                    log.debug("after register...{}", sc.getRemoteAddress());
+                    log.info("connected ...{}", sc.getRemoteAddress());
+                    log.info("before register ...{}", sc.getRemoteAddress());
+                    // boss调用 初始化 worker selector, round robin 轮询
+                    workers[index.getAndIncrement() % workers.length].register(sc);
+                    log.info("after register ...{}", sc.getRemoteAddress());
                 }
             }
         }
     }
-    static class Worker implements Runnable{
+
+    private static class Worker implements Runnable {
         private Thread thread;
         private Selector selector;
-        private String name;
+        private final String name;
         private volatile boolean start = false; // 还未初始化
+
         private ConcurrentLinkedQueue<Runnable> queue = new ConcurrentLinkedQueue<>();
         public Worker(String name) {
             this.name = name;
         }
 
-        // 初始化线程，和 selector
+        // 初始化线程，初始化 worker selector
         public void register(SocketChannel sc) throws IOException {
-            if(!start) {
-                selector = Selector.open();
-                thread = new Thread(this, name);
+            if (!start) {
+                this.selector = Selector.open();
+                this.thread = new Thread(this, name);
                 thread.start();
                 start = true;
             }
-
-
-            // 方式一, 不用队列
-            selector.wakeup(); // 唤醒 select 方法 boss
-            sc.register(selector, SelectionKey.OP_READ, null); // boss
-
-            // 方式二, 用队列（netty也是这么干的）
-            /*queue.add(() -> {
-                try {
-                    sc.register(selector, SelectionKey.OP_READ, null);
-                } catch (ClosedChannelException e) {
-                    e.printStackTrace();
-                }
-            });
-            selector.wakeup();*/
+            selector.wakeup(); // 唤醒select()方法， 这样可以保证，在boss线程中，可以sc可以register到selector中
+            sc.register(selector, SelectionKey.OP_READ, null);
         }
+
 
         @Override
         public void run() {
-            while(true) {
+            while (true) {
                 try {
-                    selector.select(); // worker-0  阻塞
-
-                    // 方式二
-                    /*Runnable task = queue.poll();
-                    if (task != null) {
-                        task.run();  // 执行了sc.register(selector, SelectionKey.OP_READ, null);
-                    }*/
-
+                    selector.select();
                     Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
                     while (iter.hasNext()) {
                         SelectionKey key = iter.next();
@@ -103,17 +87,17 @@ public class MultiThreadServer {
                             if (key.isReadable()) {
                                 ByteBuffer buffer = ByteBuffer.allocate(16);
                                 SocketChannel channel = (SocketChannel) key.channel();
-                                log.debug("read...{}", channel.getRemoteAddress());
+                                log.info("read ...{}", channel.getRemoteAddress());
                                 int read = channel.read(buffer);
                                 if (read == -1) {
-                                    key.cancel();  // sc正常关闭时，也会有一个读事件
+                                    key.cancel();
                                 } else {
                                     buffer.flip();
                                     debugAll(buffer);
                                 }
                             }
                         } catch (IOException e) {
-                            key.cancel();  // sc异常关闭时，也会有一个读事件
+                            key.cancel();
                         }
                     }
                 } catch (IOException e) {
