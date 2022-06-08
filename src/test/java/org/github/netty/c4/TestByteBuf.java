@@ -12,8 +12,9 @@ public class TestByteBuf {
 //        ByteBuf buf = ByteBufAllocator.DEFAULT.heapBuffer();  // c池化的，不安全的，堆内存
 
         ByteBuf buf = ByteBufAllocator.DEFAULT.buffer();  // 池化的，不安全的，直接内存
-
-//         System.out.println(buf);  // PooledUnsafeDirectByteBuf(ridx: 0, widx: 0, cap: 256)
+        // 如果加了参数： -Dio.netty.allocator.type=unpooled ，则是UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf(ridx: 0, widx: 0, cap: 256)
+        // 默认参数是： -Dio.netty.allocator.type=pooled
+        System.out.println(buf);  // PooledUnsafeDirectByteBuf(ridx: 0, widx: 0, cap: 256)
         log(buf);
 
         StringBuilder sb = new StringBuilder();
@@ -41,16 +42,23 @@ public class TestByteBuf {
         buf.writeLong(20L);
         log(buf);
 
+        // 可链式调用
+        buf.clear();
+        buf.writeBytes(new byte[]{3, 2, 1}).writeBytes(new byte[]{'a', 'b', 'c'});
+        log(buf);
+
+        buf.setByte(0, 9);  // 不会改变write index 写指针， 这里是将上面的3改为9
+        log(buf);
     }
 
     private static void log(ByteBuf buffer) {
         int length = buffer.readableBytes();
         int rows = length / 16 + (length % 15 == 0 ? 0 : 1) + 4;
         StringBuilder buf = new StringBuilder(rows * 80 * 2)
-            .append("read index:").append(buffer.readerIndex())
-            .append(" write index:").append(buffer.writerIndex())
-            .append(" capacity:").append(buffer.capacity())
-            .append(NEWLINE);
+                .append("read index:").append(buffer.readerIndex())
+                .append(" write index:").append(buffer.writerIndex())
+                .append(" capacity:").append(buffer.capacity())
+                .append(NEWLINE);
         appendPrettyHexDump(buf, buffer);
         System.out.println(buf.toString());
     }
