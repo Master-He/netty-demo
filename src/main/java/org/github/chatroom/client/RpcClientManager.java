@@ -59,8 +59,8 @@ public class RpcClientManager {
 //                // 线程
 //            });
 
-            // 4. 等待 promise 结果
-            promise.await();
+            // 4. 等待 promise 结果, 这里阻塞直到promise被setSuccess或者setFailure
+            promise.await();  // promise.sync()会抛异常，而await()不会抛异常，await()配合isSuccess()判断是否成功！
             if(promise.isSuccess()) {
                 // 调用正常
                 return promise.getNow();

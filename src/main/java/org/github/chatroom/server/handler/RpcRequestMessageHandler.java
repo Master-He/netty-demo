@@ -30,7 +30,7 @@ public class RpcRequestMessageHandler extends SimpleChannelInboundHandler<RpcReq
         } catch (Exception e) {
             e.printStackTrace();
             String msg = e.getCause().getMessage();
-            response.setExceptionValue(new Exception("远程调用出错:" + msg));
+            response.setExceptionValue(new Exception("远程调用出错:" + msg)); // 这里只返回必要的错误，直接返回e客户端会引发包长度太长的异常
         }
         ctx.writeAndFlush(response);
     }

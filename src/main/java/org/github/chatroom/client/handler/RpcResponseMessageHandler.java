@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
-@ChannelHandler.Sharable
+@ChannelHandler.Sharable  // 状态是线程安全的，所以可以加Sharable注解
 public class RpcResponseMessageHandler extends SimpleChannelInboundHandler<RpcResponseMessage> {
 
     //                       序号      用来接收结果的 promise 对象
@@ -22,7 +22,7 @@ public class RpcResponseMessageHandler extends SimpleChannelInboundHandler<RpcRe
 
     protected void channelRead0(ChannelHandlerContext ctx, RpcResponseMessage msg) throws Exception {
         log.debug("{}", msg);
-        // 拿到空的 promise
+        // 拿到空的 promise , 注意这里是PROMISES.remove而不是PROMISES.get()
         Promise<Object> promise = PROMISES.remove(msg.getSequenceId());
         if (promise != null) {
             Object returnValue = msg.getReturnValue();
